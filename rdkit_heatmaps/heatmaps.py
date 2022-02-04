@@ -51,7 +51,10 @@ class ValueGrid(Grid2D):
         xv, yv = np.meshgrid(x_y0_list, x0_y_list)
 
         for f in self.function_list:
-            values = np.vectorize(f)(xv, yv).T
+            xv = xv.ravel()
+            yv = yv.ravel()
+            values = f(xv, yv)
+            values = values.reshape(self.x_res, self.y_res).T
             assert values.shape == self.values.shape, (values.shape, self.values.shape)
             self.values += values
 
@@ -74,13 +77,9 @@ class ColorGrid(Grid2D):
 
 
 def color_canvas(canvas: Draw.MolDraw2D, colorgrid: ColorGrid):
-    dx = colorgrid.dx / 10
-    dy = colorgrid.dy / 10
     for x in range(colorgrid.x_res):
         for y in range(colorgrid.y_res):
             upper_left, lower_right = colorgrid.grid_field_lim(x, y)
-            upper_left = (upper_left[0] + dx, upper_left[1] + dy)
-            lower_right = (lower_right[0] - dx, lower_right[1] - dy)
             upper_left, lower_right = Point2D(*upper_left), Point2D(*lower_right)
             canvas.SetColour(tuple(colorgrid.color_grid[x, y]))
             canvas.DrawRect(upper_left, lower_right)
