@@ -54,7 +54,7 @@ class ValueGrid(Grid2D):
             xv = xv.ravel()
             yv = yv.ravel()
             values = f(xv, yv)
-            values = values.reshape(self.x_res, self.y_res).T
+            values = values.reshape(self.y_res, self.x_res).T
             assert values.shape == self.values.shape, (values.shape, self.values.shape)
             self.values += values
 
