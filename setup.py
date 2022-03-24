@@ -8,5 +8,5 @@ setup(
     packages=['rdkit_heatmaps', ],
     author_email='cfeldmann@bit.uni-bonn.de',
     description='Toolkit for more custom heatmaps in RDKit',
-    install_requires=['numpy', 'matplotlib']
+    install_requires=['numpy', 'matplotlib', "pillow"]
 )

@@ -5,6 +5,7 @@ from rdkit.Geometry.rdGeometry import Point2D
 import abc
 import matplotlib.colors as colors
 from matplotlib import cm
+from rdkit_heatmaps.functions import Function2D
 
 
 class Grid2D(abc.ABC):
@@ -38,10 +39,10 @@ class Grid2D(abc.ABC):
 class ValueGrid(Grid2D):
     def __init__(self, x_lim: Tuple[float, float], y_lim: Tuple[float, float], x_res: int, y_res: int, ):
         super().__init__(x_lim, y_lim, x_res, y_res)
-        self.function_list = []
+        self.function_list: List[Function2D] = []
         self.values = np.zeros((self.x_res, self.y_res))
 
-    def add_function(self, function):
+    def add_function(self, function: Function2D):
         self.function_list.append(function)
 
     def recalculate(self):
@@ -49,11 +50,11 @@ class ValueGrid(Grid2D):
         x_y0_list = np.array([self.grid_field_center(x, 0)[0] for x in range(self.x_res)])
         x0_y_list = np.array([self.grid_field_center(0, y)[1] for y in range(self.y_res)])
         xv, yv = np.meshgrid(x_y0_list, x0_y_list)
-
+        xv = xv.ravel()
+        yv = yv.ravel()
+        coordinate_pairs = np.vstack([xv, yv]).T
         for f in self.function_list:
-            xv = xv.ravel()
-            yv = yv.ravel()
-            values = f(xv, yv)
+            values = f(coordinate_pairs)
             values = values.reshape(self.y_res, self.x_res).T
             assert values.shape == self.values.shape, (values.shape, self.values.shape)
             self.values += values

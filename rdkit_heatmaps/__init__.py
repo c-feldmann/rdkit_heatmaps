@@ -1,0 +1,1 @@
+from rdkit_heatmaps.molmapping import mapvalues2mol
