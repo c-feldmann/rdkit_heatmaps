@@ -1,6 +1,5 @@
 from typing import *
 import numpy as np
-import pandas
 from rdkit.Chem import Draw
 from rdkit.Geometry.rdGeometry import Point2D
 import abc
