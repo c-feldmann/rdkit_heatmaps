@@ -61,7 +61,7 @@ def mapvalues2mol(mol: Chem.Mol,
 
     # Assigning default values
     if grid_resolution is None:
-        grid_resolution = [1000, 500]
+        grid_resolution = [800, 450]
 
     if padding is None:
         padding = [1, 1]
@@ -126,9 +126,6 @@ def mapvalues2mol(mol: Chem.Mol,
 
     # Evaluating all functions at pixel positions to obtain pixel values
     v_map.evaluate()
-    if not value_lims:
-        abs_max = np.max(np.abs(v_map.values))
-        value_lims = [-abs_max, abs_max]
 
     # Greating color-grid from the value grid.
     c_grid = v_map.map2color(color, v_lim=value_lims)

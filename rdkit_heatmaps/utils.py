@@ -33,7 +33,7 @@ def get_mol_lims(mol: Chem.Mol) -> Tuple[Tuple[float, float], Tuple[float, float
     return x_lim, y_lim
 
 
-def pad(lim: Union[Sequence[float], np.ndarray], ratio: float) -> List[float, float]:
+def pad(lim: Union[Sequence[float], np.ndarray], ratio: float) -> List[float]:
     """Takes a 2 dimensional vector and adds len(vector) * ratio / 2 to each side and returns obtained vector.
 
     Parameters
