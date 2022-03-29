@@ -71,7 +71,7 @@ class Grid2D(abc.ABC):
 
 class ColorGrid(Grid2D):
     """Stores rgba-values of cells."""
-    def __init__(self, x_lim: Tuple[float, float], y_lim: Tuple[float, float], x_res: int, y_res:int):
+    def __init__(self, x_lim: Tuple[float, float], y_lim: Tuple[float, float], x_res: int, y_res: int):
         super().__init__(x_lim, y_lim, x_res, y_res)
         self.color_grid = np.ones((self.x_res, self.y_res, 4))
 
@@ -125,7 +125,7 @@ class ValueGrid(Grid2D):
             self.values += values
 
     def map2color(self, c_map: Union[colors.Colormap, str],
-                  v_lim: Optional[Sequence[float, float]] = None
+                  v_lim: Optional[Sequence[float]] = None
                   ) -> ColorGrid:
         """Generates a ColorGrid from self.values according to given colormap
 

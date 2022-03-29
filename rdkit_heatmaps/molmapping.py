@@ -67,7 +67,7 @@ def mapvalues2mol(mol: Chem.Mol,
         padding = [1, 1]
 
     if atom_weights is None:
-        atom_weights = np.zeros( len(mol.GetAtoms()))
+        atom_weights = np.zeros(len(mol.GetAtoms()))
 
     if bond_weights is None:
         bond_weights = np.zeros(len(mol.GetBonds()))
@@ -129,8 +129,11 @@ def mapvalues2mol(mol: Chem.Mol,
 
     # Greating color-grid from the value grid.
     c_grid = v_map.map2color(color, v_lim=value_lims)
-    # Drawing the molecule to ini
+    # Drawing the molecule and erasing it to initialize the grid
     canvas.DrawMolecule(mol)
+    canvas.ClearDrawing()
+    # Adding the Colormap to the canvas
     color_canvas(canvas, c_grid)
+    # Adding the molecule to the canvas
     canvas.DrawMolecule(mol)
     return canvas

@@ -33,12 +33,12 @@ def get_mol_lims(mol: Chem.Mol) -> Tuple[Tuple[float, float], Tuple[float, float
     return x_lim, y_lim
 
 
-def pad(lim: Union[Sequence[float], np.ndarray], ratio: float) -> List[float]:
+def pad(lim: Union[Sequence[float], np.ndarray], ratio: float) -> Tuple[float, float]:
     """Takes a 2 dimensional vector and adds len(vector) * ratio / 2 to each side and returns obtained vector.
 
     Parameters
     ----------
-    lim: Sequence[float, float]
+    lim: Sequence[float]
 
     ratio: float
         factor by which the limits are extended.
@@ -50,7 +50,7 @@ def pad(lim: Union[Sequence[float], np.ndarray], ratio: float) -> List[float]:
     """
     diff = max(lim) - min(lim)
     diff *= ratio / 2
-    return [lim[0] - diff, lim[1] + diff]
+    return lim[0] - diff, lim[1] + diff
 
 
 def transform2png(data) -> Image:
