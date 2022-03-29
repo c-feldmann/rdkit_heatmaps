@@ -6,17 +6,19 @@ from typing import *
 
 
 def get_mol_lims(mol: Chem.Mol) -> Tuple[Tuple[float, float], Tuple[float, float]]:
-    """Returns the extend of the molecule.
+    """Returns the extent of the molecule.
 
     x- and y-coordinates of all atoms in the molecule are accessed, returning min- and max-values for both axes.
 
     Parameters
     ----------
-    mol
+    mol: Chem.Mol
+        RDKit Molecule object of which the limits are determined.
 
     Returns
     -------
     Tuple[Tuple[float, float], Tuple[float, float]]
+        Limits of the molecule.
     """
     coords = []
     conf = mol.GetConformer(0)
@@ -31,20 +33,20 @@ def get_mol_lims(mol: Chem.Mol) -> Tuple[Tuple[float, float], Tuple[float, float
     return x_lim, y_lim
 
 
-def pad(lim: Union[Sequence[float], np.ndarray], ratio: float):
+def pad(lim: Union[Sequence[float], np.ndarray], ratio: float) -> List[float, float]:
     """Takes a 2 dimensional vector and adds len(vector) * ratio / 2 to each side and returns obtained vector.
-
-
 
     Parameters
     ----------
     lim: Sequence[float, float]
 
-    ratio
+    ratio: float
+        factor by which the limits are extended.
 
     Returns
     -------
-
+    List[float, float]
+        Extended limits
     """
     diff = max(lim) - min(lim)
     diff *= ratio / 2
