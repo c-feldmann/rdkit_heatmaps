@@ -63,9 +63,6 @@ def mapvalues2mol(mol: Chem.Mol,
     if grid_resolution is None:
         grid_resolution = [800, 450]
 
-    if padding is None:
-        padding = [1, 1]
-
     if atom_weights is None:
         atom_weights = np.zeros(len(mol.GetAtoms()))
 
@@ -79,6 +76,11 @@ def mapvalues2mol(mol: Chem.Mol,
         draw_opt.bondLineWidth = 3
         canvas.SetDrawOptions(draw_opt)
 
+    if padding is None:
+        # Taking padding from DrawOptions
+        draw_opt = canvas.drawOptions()
+        padding = [draw_opt.padding * 2, draw_opt.padding * 2]
+
     # Validating input
     if not len(atom_weights) == len(mol.GetAtoms()):
         raise ValueError("len(atom_weights) is not equal to number of bonds in mol")
@@ -88,6 +90,25 @@ def mapvalues2mol(mol: Chem.Mol,
 
     # Setting up the grid
     xl, yl = utils.get_mol_lims(mol)  # Limit of molecule
+    xl, yl = list(xl), list(yl)
+
+    # Extent of the canvas is approximated by size of molecule scaled by ratio of canvas height and width.
+    # Would be nice if this was directly accessible...
+    mol_height = yl[1] - yl[0]
+    mol_width = xl[1] - xl[0]
+
+    height_to_width_ratio_mol = mol_height / mol_width
+    height_to_width_ratio_canvas = canvas.Height() / canvas.Width()
+
+    if height_to_width_ratio_mol < height_to_width_ratio_canvas:
+        mol_height_new = canvas.Height() / canvas.Width() * mol_width
+        yl[0] -= (mol_height_new-mol_height) / 2
+        yl[1] += (mol_height_new-mol_height) / 2
+    else:
+        mol_width_new = canvas.Width() / canvas.Height() * mol_height
+        xl[0] -= (mol_width_new-mol_width) / 2
+        xl[1] += (mol_width_new-mol_width) / 2
+
     xl = utils.pad(xl, padding[0])  # Increasing size of x-axis
     yl = utils.pad(yl, padding[1])  # Increasing size of y-axis
     v_map = ValueGrid(xl, yl, grid_resolution[0], grid_resolution[1])
