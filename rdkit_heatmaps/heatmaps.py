@@ -1,5 +1,6 @@
 from typing import *
 import numpy as np
+import pandas
 from rdkit.Chem import Draw
 from rdkit.Geometry.rdGeometry import Point2D
 import abc
@@ -31,9 +32,16 @@ class Grid2D(abc.ABC):
         return x_coord, y_coord
 
     def grid_field_lim(self, x_idx: int, y_idx: int) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+        """Returns x and y coordinates for the upper left and lower right position of specified pixel"""
         upper_left = (min(self.x_lim) + self.dx * x_idx, min(self.y_lim) + self.dy * y_idx)
         lower_right = (min(self.x_lim) + self.dx * (x_idx + 1), min(self.y_lim) + self.dy * (y_idx + 1))
         return upper_left, lower_right
+
+
+class ColorGrid(Grid2D):
+    def __init__(self, x_lim: Tuple[float, float], y_lim: Tuple[float, float], x_res: int, y_res:int):
+        super().__init__(x_lim, y_lim, x_res, y_res)
+        self.color_grid = np.ones((self.x_res, self.y_res, 4))
 
 
 class ValueGrid(Grid2D):
@@ -45,7 +53,7 @@ class ValueGrid(Grid2D):
     def add_function(self, function: Function2D):
         self.function_list.append(function)
 
-    def recalculate(self):
+    def evaluate(self):
         self.values = np.zeros((self.x_res, self.y_res))
         x_y0_list = np.array([self.grid_field_center(x, 0)[0] for x in range(self.x_res)])
         x0_y_list = np.array([self.grid_field_center(0, y)[1] for y in range(self.y_res)])
@@ -59,7 +67,7 @@ class ValueGrid(Grid2D):
             assert values.shape == self.values.shape, (values.shape, self.values.shape)
             self.values += values
 
-    def map2color(self, c_map: Union[colors.Colormap, str], v_lim=None):
+    def map2color(self, c_map: Union[colors.Colormap, str], v_lim=None) -> ColorGrid:
         color_grid = ColorGrid(self.x_lim, self.y_lim, self.x_res, self.y_res)
         if not v_lim:
             v_lim = np.min(self.values), np.max(self.values)
@@ -71,16 +79,10 @@ class ValueGrid(Grid2D):
         return color_grid
 
 
-class ColorGrid(Grid2D):
-    def __init__(self, x_lim: Tuple[float, float], y_lim: Tuple[float, float], x_res: int, y_res:int):
-        super().__init__(x_lim, y_lim, x_res, y_res)
-        self.color_grid = np.ones((self.x_res, self.y_res, 4))
-
-
-def color_canvas(canvas: Draw.MolDraw2D, colorgrid: ColorGrid):
-    for x in range(colorgrid.x_res):
-        for y in range(colorgrid.y_res):
-            upper_left, lower_right = colorgrid.grid_field_lim(x, y)
+def color_canvas(canvas: Draw.MolDraw2D, color_grid: ColorGrid):
+    for x in range(color_grid.x_res):
+        for y in range(color_grid.y_res):
+            upper_left, lower_right = color_grid.grid_field_lim(x, y)
             upper_left, lower_right = Point2D(*upper_left), Point2D(*lower_right)
-            canvas.SetColour(tuple(colorgrid.color_grid[x, y]))
+            canvas.SetColour(tuple(color_grid.color_grid[x, y]))
             canvas.DrawRect(upper_left, lower_right)

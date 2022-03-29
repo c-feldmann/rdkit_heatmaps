@@ -20,18 +20,57 @@ def mapvalues2mol(mol: Chem.Mol,
                   value_lims: Optional[Sequence[float]] = None,
                   color: Union[str, Colormap] = "bwr",
                   padding: Optional[Sequence[float]] = None) -> rdMolDraw2D:
+    """A function to map weights of atoms and bonds to the drawing of a RDKit molecular depiction.
 
+    For each atom and bond of depicted molecule a Gauss-function, centered at the respective object, is created and
+    scaled by the corresponding weight. Gauss-functions of atoms are circular, while Gauss-functions of bonds can be
+    distorted along the bond axis. The value of each pixel is determined as the sum of all function-values at the pixel
+    position. Subsequently the values are mapped to a color and drawn onto the canvas.
+
+    Parameters
+    ----------
+    mol: Chem.Mol
+        RDKit molecule object which is displayed.
+    atom_weights: Optional[Union[Sequence[float], np.ndarray]]
+        Array of weights for atoms.
+    bond_weights: Optional[Union[Sequence[float], np.ndarray]]
+        Array of weights for bonds.
+    atom_width: float
+        Value for the width of displayed atom weights.
+    bond_width: float
+        Value for the width of displayed bond weights (perpendicular to bond-axis).
+    bond_length: float
+        Value for the length of displayed bond weights (along the bond-axis).
+    canvas: Optional[rdMolDraw2D.MolDraw2D]
+        RDKit canvas the molecule and heatmap are drawn onto.
+    grid_resolution: Optional[Sequence[int]]
+        Number of pixels of x- and y-axis.
+    value_lims: Optional[Sequence[float]]
+        Lower and upper limit of displayed values. Values exceeding limit are displayed as maximum (or minimum) value.
+    color: Union[str, Colormap]
+        Matplotlib colormap or string referring to a matplotlib colormap
+    padding: Optional[Sequence[float]]
+        Increase of heatmap size, relative to size of molecule. Usually the heatmap is increased by 100% in each axis
+        by padding 50% in each side.
+
+    Returns
+    -------
+    rdMolDraw2D.MolDraw2D
+        Drawing of molecule and corresponding heatmap.
+    """
+
+    # Assigning default values
     if grid_resolution is None:
         grid_resolution = [1000, 500]
-    if atom_weights is not None:
-        if not len(atom_weights) == len(mol.GetAtoms()):
-            raise ValueError("len(atom_weights) is not equal to number of bonds in mol")
-    if bond_weights is not None:
-        if not len(bond_weights) == len(mol.GetBonds()):
-            raise ValueError("len(bond_weights) is not equal to number of bonds in mol")
 
     if padding is None:
         padding = [1, 1]
+
+    if atom_weights is None:
+        atom_weights = np.zeros( len(mol.GetAtoms()))
+
+    if bond_weights is None:
+        bond_weights = np.zeros(len(mol.GetBonds()))
 
     if not canvas:
         canvas = rdMolDraw2D.MolDraw2DCairo(800, 450)
@@ -40,41 +79,60 @@ def mapvalues2mol(mol: Chem.Mol,
         draw_opt.bondLineWidth = 3
         canvas.SetDrawOptions(draw_opt)
 
-    xl, yl = utils.get_mol_lims(mol)
-    xl = utils.pad(xl, padding[0])
-    yl = utils.pad(yl, padding[1])
+    # Validating input
+    if not len(atom_weights) == len(mol.GetAtoms()):
+        raise ValueError("len(atom_weights) is not equal to number of bonds in mol")
+
+    if not len(bond_weights) == len(mol.GetBonds()):
+        raise ValueError("len(bond_weights) is not equal to number of bonds in mol")
+
+    # Setting up the grid
+    xl, yl = utils.get_mol_lims(mol)  # Limit of molecule
+    xl = utils.pad(xl, padding[0])  # Increasing size of x-axis
+    yl = utils.pad(yl, padding[1])  # Increasing size of y-axis
     v_map = ValueGrid(xl, yl, grid_resolution[0], grid_resolution[1])
+
     conf = mol.GetConformer(0)
 
+    # Adding Gauss-functions centered at atoms
     for i, _ in enumerate(mol.GetAtoms()):
+        if atom_weights[i] == 0:
+            continue
         pos = conf.GetAtomPosition(i)
         coords = pos.x, pos.y
         f = GaussFunction2D(center=coords, std1=atom_width, std2=atom_width, scale=atom_weights[i], rotation=0)
         v_map.add_function(f)
 
+    # Adding Gauss-functions centered at bonds (position between the two bonded-atoms)
     for i, b in enumerate(mol.GetBonds()):  # type: Chem.Bond
+        if bond_weights[i] == 0:
+            continue
         a1 = b.GetBeginAtom().GetIdx()
-        a2 = b.GetEndAtom().GetIdx()
         a1_pos = conf.GetAtomPosition(a1)
         a1_coords = np.array([a1_pos.x, a1_pos.y])
+
+        a2 = b.GetEndAtom().GetIdx()
         a2_pos = conf.GetAtomPosition(a2)
         a2_coords = np.array([a2_pos.x, a2_pos.y])
 
         diff = a2_coords - a1_coords
         angle = np.arctan2(diff[0], diff[1])
+
         bond_center = (a1_coords + a2_coords) / 2
 
         f = GaussFunction2D(center=bond_center, std1=bond_width, std2=bond_length, scale=bond_weights[i],
                             rotation=angle)
         v_map.add_function(f)
 
-    v_map.recalculate()
+    # Evaluating all functions at pixel positions to obtain pixel values
+    v_map.evaluate()
     if not value_lims:
         abs_max = np.max(np.abs(v_map.values))
         value_lims = [-abs_max, abs_max]
 
-
+    # Greating color-grid from the value grid.
     c_grid = v_map.map2color(color, v_lim=value_lims)
+    # Drawing the molecule to ini
     canvas.DrawMolecule(mol)
     color_canvas(canvas, c_grid)
     canvas.DrawMolecule(mol)
